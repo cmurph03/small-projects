@@ -1,0 +1,79 @@
+##For analyzing Glucagon results 2-17-21
+##Returns a CSV file with 4 new rows: average, peak, baseline, and delta
+##Has the option to sort the new file in ascending or descending
+##order based on delta
+##Returns the overall max, min, and avg  of delta in the prompt window
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+readFile = input('File Name (CSV): ')
+
+data = pd.read_csv(readFile, index_col = 0) 
+
+del data['Label']
+
+# The cells should now be the rows with the
+# timepoints being the columns
+data = data.T
+
+data['baseLine'] = np.average(data.iloc[:, 1:11], axis=1)
+
+data['index of peak'] = data.idxmax(axis = 1)
+
+#(does not include baseline or index when looking)
+data['peak'] = data.iloc[:, 11:-2].max(axis=1)
+
+data['delta'] = data['peak'] - data['baseLine']
+
+
+maxDelta = data['delta'].max()
+minDelta = data['delta'].min()
+averageDelta = data['delta'].mean()
+
+sort = input('Would you like to sort the data by delta? Y/N ')
+
+if (sort == 'Y'):
+    sortAscending = input('Ascending or descending order? A/D ')
+    if (sortAscending == 'A'):
+        data = data.sort_values(by=['delta','peak'])
+        print('Data sorted in ascending order.')
+    else:
+        data = data.sort_values(by=['delta', 'peak'], ascending=[False, False])
+        print('Data sorted in descending order.')
+
+deltaSortFileName = input('Name of the output file for data sorted by delta: ')
+data.to_csv(deltaSortFileName)
+
+###print delta values to terminal
+print('Max Delta ', maxDelta)
+print('Min Delta ', minDelta)
+print('Average ', averageDelta)
+
+topRange = float(input('Max delta value in range (inclusive): '))
+bottomRange = float(input('Min delta value in range (inclusive): '))
+
+#filter so that the only data in the data frame is between the
+#given max and min delta values
+data = data[(data['delta'] >= bottomRange) & (data['delta'] <= topRange)]
+
+newFileName = input('Name of the output file for filtered data: ')
+data.to_csv(newFileName)
+
+plotData = input('Would you like to plot the filtered data? Y/N ')
+if (plotData == 'Y'):
+    fullDataPlot = input('Are you plotting the average of each column? Y/N ')
+
+    if (fullDataPlot == 'Y'):
+        data.mean().plot()
+        plt.show()
+    else:
+        data = data.T #Transposed so that the samples are the columns
+        data.plot()
+        plt.show()
+
+
+
+
+        
